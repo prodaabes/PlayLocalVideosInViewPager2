@@ -19,19 +19,19 @@ import com.google.android.exoplayer2.upstream.DefaultDataSource
 class VideoAdapter(
     var context: Context,
     var videos: ArrayList<Video>,
-    var videoPreparedListener: OnVideoPreparedListener
+    var videoListener: OnVideoListener
 ) : RecyclerView.Adapter<VideoAdapter.VideoViewHolder>() {
 
     class VideoViewHolder(
         val binding: ListVideoBinding,
         var context: Context,
-        var videoPreparedListener: OnVideoPreparedListener
+        var videoPreparedListener: OnVideoListener
     ) : RecyclerView.ViewHolder(binding.root) {
 
         private lateinit var exoPlayer: ExoPlayer
         private lateinit var mediaSource: MediaSource
 
-        fun setVideoPath(url: String) {
+        fun setVideoPath(uri: Uri) {
 
             exoPlayer = ExoPlayer.Builder(context).build()
             exoPlayer.addListener(object : Player.Listener {
@@ -56,7 +56,7 @@ class VideoAdapter(
 
             val dataSourceFactory = DefaultDataSource.Factory(context)
 
-            mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(Uri.parse(url)))
+            mediaSource = ProgressiveMediaSource.Factory(dataSourceFactory).createMediaSource(MediaItem.fromUri(uri))
 
             exoPlayer.setMediaSource(mediaSource)
             exoPlayer.prepare()
@@ -72,21 +72,26 @@ class VideoAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VideoViewHolder {
         val view = ListVideoBinding.inflate(LayoutInflater.from(context), parent, false)
-        return VideoViewHolder(view, context, videoPreparedListener)
+        return VideoViewHolder(view, context, videoListener)
     }
 
     override fun onBindViewHolder(holder: VideoViewHolder, position: Int) {
         val model = videos[position]
 
         holder.binding.tvTitle.text = model.title
-        holder.setVideoPath(model.url)
+        holder.setVideoPath(model.uri)
+
+        holder.itemView.setOnClickListener {
+            videoListener.onVideoClick(position)
+        }
     }
 
     override fun getItemCount(): Int {
         return videos.size
     }
 
-    interface OnVideoPreparedListener {
+    interface OnVideoListener {
         fun onVideoPrepared(exoPlayerItem: ExoPlayerItem)
+        fun onVideoClick(position: Int)
     }
 }
